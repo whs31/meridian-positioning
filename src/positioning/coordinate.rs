@@ -28,9 +28,9 @@ impl PartialEq for GeoCoordinate
   fn eq(&self, other: &Self) -> bool
   {
     approx_eq!(f64, self.latitude, other.latitude, epsilon = 0.0000003) &&
-    approx_eq!(f64, self.longitude, other.longitude, epsilon = 0.0000003) &&
-    ((other.altitude.is_none() && other.altitude.is_none()) ||
-      approx_eq!(f32, self.altitude.unwrap_or(1.0), other.altitude.unwrap_or(-1.0),
+      approx_eq!(f64, self.longitude, other.longitude, epsilon = 0.0000003) &&
+      ((other.altitude.is_none() && other.altitude.is_none()) ||
+        approx_eq!(f32, self.altitude.unwrap_or(1.0), other.altitude.unwrap_or(-1.0),
         epsilon = 0.0000003))
   }
 }
@@ -136,5 +136,39 @@ impl GeoCoordinate
         .wrap(Longitude),
       self.altitude
     ))
+  }
+}
+
+#[cfg(test)]
+mod tests {
+  use std::collections::VecDeque;
+  use super::*;
+
+  #[test]
+  fn test_at_distance_and_azimuth()
+  {
+    let test_coord = GeoCoordinate::new(60.0, 30.0, None);
+    let d: Vec<f32> = vec![10000.0, -10000.0, 55600.0, -43400.0];
+    let az: Vec<f32> = vec![0.0, 90.0, 180.0, 270.0, 360.0];
+
+    assert_eq!(test_coord.at_distance_and_azimuth(d[0], az[0]).unwrap(), GeoCoordinate::new(60.089932059, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[0], az[1]).unwrap(), GeoCoordinate::new(59.999877754, 30.179863675, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[0], az[2]).unwrap(), GeoCoordinate::new(59.910067941, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[0], az[3]).unwrap(), GeoCoordinate::new(59.999877754, 29.820136325, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[0], az[4]).unwrap(), GeoCoordinate::new(60.089932059, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[1], az[0]).unwrap(), GeoCoordinate::new(59.910067941, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[1], az[1]).unwrap(), GeoCoordinate::new(59.999877754, 29.820136325, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[1], az[2]).unwrap(), GeoCoordinate::new(60.089932059, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[1], az[3]).unwrap(), GeoCoordinate::new(59.999877754, 30.179863675, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[1], az[4]).unwrap(), GeoCoordinate::new(59.910067941, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[2], az[0]).unwrap(), GeoCoordinate::new(60.500022248, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[2], az[1]).unwrap(), GeoCoordinate::new(59.996221155, 30.999968343, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[2], az[2]).unwrap(), GeoCoordinate::new(59.499977752, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[2], az[3]).unwrap(), GeoCoordinate::new(59.996221155, 29.000031657, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[2], az[4]).unwrap(), GeoCoordinate::new(60.500022248, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[3], az[0]).unwrap(), GeoCoordinate::new(59.609694864, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[3], az[1]).unwrap(), GeoCoordinate::new(59.997697499, 29.219425949, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[3], az[2]).unwrap(), GeoCoordinate::new(60.390305136, 30.000000000, None));
+    assert_eq!(test_coord.at_distance_and_azimuth(d[3], az[3]).unwrap(), GeoCoordinate::new(59.997697499, 30.780574051, None));
   }
 }
