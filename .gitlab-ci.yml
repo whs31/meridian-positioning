@@ -1,0 +1,18 @@
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  GIT_DEPTH: 100
+  PKG_VER: 0.0.0
+
+include:
+  - local: /.gitlab/prerequisite-astra.yml
+  - local: /.gitlab/prerequisite-ubuntu.yml
+  - local: /.gitlab/prerequisite-windows.yml
+  - local: /.gitlab/build-rust-astra.yml
+  - local: /.gitlab/build-rust-ubuntu.yml
+  - local: /.gitlab/build-rust-windows.yml
+  - local: /.gitlab/test-rust.yml
+
+stages:
+  - prerequisites
+  - build-rust
+  - test-rust

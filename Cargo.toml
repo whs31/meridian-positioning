@@ -1,0 +1,12 @@
+[package]
+name = "positioning-rs"
+version = "0.0.1"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+authors = ["Dmitry Ryazancev <75864292+whs31@user.noreply.github.com>"]
+description = "Geolocation & positioning library"
+readme = "README.md"
+keywords = ["geolocation", "positioning", "geospatial"]
+
+[dependencies]
+thiserror = "1.0.50"
