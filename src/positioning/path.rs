@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use crate::positioning::errors::PositioningError;
 use crate::positioning::GeoCoordinate;
 
@@ -18,6 +19,18 @@ impl Default for GeoPath
   fn default() -> Self
   {
     Self { path: Vec::new() }
+  }
+}
+
+impl Display for GeoPath
+{
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result
+  {
+    write!(f, "[")?;
+    for i in 0..self.path.len() {
+      write!(f, "{}", self.path[i])?;
+    }
+    write!(f, "]")
   }
 }
 
@@ -99,8 +112,8 @@ impl GeoPath
     if self.path.is_empty() { return Ok(0.0) }
     let len: f32 = (from..to.clamp(0, self.size() - 1))
       .map(|i| self.path[i].distance_to(&self.path[i + 1])
-        .expect("Distance calculation failed"))
-      .sum();
+        .expect("Distance calculation failed")
+      ).sum();
     return match length_type {
       GeoPathLengthType::NoLoop => Ok(len),
       GeoPathLengthType::ClosedLoop => Ok(len + self.path
