@@ -3,7 +3,7 @@ use std::ops::{Add, Mul};
 use float_cmp::approx_eq;
 use crate::positioning::constants as Constants;
 use crate::positioning::errors::PositioningError;
-use crate::positioning::utility::{CoordinateField, CoordinateFieldType};
+use crate::positioning::utility::{CoordinateField};
 use crate::positioning::utility::CoordinateFieldType::{Latitude, Longitude};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -43,6 +43,14 @@ impl Display for GeoCoordinate
       None => write!(f, "({:.7}°, {:.7}°)", self.latitude, self.longitude),
       Some(x) => write!(f, "({:.7}°, {:.7}°, {:.2}m)", self.latitude, self.longitude, x)
     }
+  }
+}
+
+impl Default for GeoCoordinate
+{
+  fn default() -> Self
+  {
+    Self { latitude: f64::NAN, longitude: f64::NAN, altitude: None }
   }
 }
 
@@ -141,8 +149,41 @@ impl GeoCoordinate
 
 #[cfg(test)]
 mod tests {
-  use std::collections::VecDeque;
   use super::*;
+
+  #[test]
+  fn test_default()
+  {
+    assert_eq!(GeoCoordinate::default(), GeoCoordinate::new(f64::NAN, f64::NAN, None));
+  }
+
+  #[test]
+  fn test_coordinate_type()
+  {
+    assert_eq!(GeoCoordinate::default().coordinate_type(), GeoCoordinateType::InvalidCoordinate);
+    assert_eq!(GeoCoordinate::new(60.0, 30.0, None).coordinate_type(), GeoCoordinateType::Coordinate2D);
+    assert_eq!(GeoCoordinate::new(60.0, 30.0, Some(10.0)).coordinate_type(), GeoCoordinateType::Coordinate3D);
+  }
+
+  #[test]
+  fn test_distance_to()
+  {
+    let t = GeoCoordinate::new(60.0, 30.0, None);
+    assert_eq!(t.distance_to(&GeoCoordinate::new(60.0, 31.0, None)).unwrap().round(), 55597.0);
+    assert_eq!(t.distance_to(&GeoCoordinate::new(60.0, 29.0, None)).unwrap().round(), 55597.0);
+    assert_eq!(t.distance_to(&GeoCoordinate::new(59.0, 29.0, None)).unwrap().round(), 124694.0);
+    assert_eq!(t.distance_to(&GeoCoordinate::new(59.0, 30.0, None)).unwrap().round(), 111195.0);
+  }
+
+  #[test]
+  fn test_azimuth_to()
+  {
+    let t = GeoCoordinate::new(60.0, 30.0, None);
+    assert_eq!(t.azimuth_to(&GeoCoordinate::new(60.0, 31.0, None)).unwrap(), 89.566986);
+    assert_eq!(t.azimuth_to(&GeoCoordinate::new(60.0, 29.0, None)).unwrap(), 270.433);
+    assert_eq!(t.azimuth_to(&GeoCoordinate::new(59.0, 29.0, None)).unwrap(), 207.34126);
+    assert_eq!(t.azimuth_to(&GeoCoordinate::new(59.0, 30.0, None)).unwrap(), 180.0);
+  }
 
   #[test]
   fn test_at_distance_and_azimuth()
