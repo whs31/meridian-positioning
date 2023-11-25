@@ -5,5 +5,8 @@ use crate::positioning::coordinate::GeoCoordinate;
 pub enum PositioningError
 {
   #[error("Operation on invalid coordinate: {0}")]
-  InvalidCoordinate(GeoCoordinate)
+  InvalidCoordinate(GeoCoordinate),
+
+  #[error("Index out of bounds: {0} out of {1}")]
+  IndexOutOfBounds(usize, usize)
 }
