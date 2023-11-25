@@ -1,0 +1,6 @@
+/target
+.idea/*
+cfg_meridian.ini
+cache/*
+Cargo.lock
+test-result/*
