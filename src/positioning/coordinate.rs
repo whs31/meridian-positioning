@@ -18,9 +18,9 @@ pub enum GeoCoordinateType
 #[derive(Debug, Copy, Clone)]
 pub struct GeoCoordinate
 {
-  latitude: f64,
-  longitude: f64,
-  altitude: Option<f32>
+  pub latitude: f64,
+  pub longitude: f64,
+  pub altitude: Option<f32>
 }
 
 impl PartialEq for GeoCoordinate
