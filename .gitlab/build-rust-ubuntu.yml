@@ -11,8 +11,8 @@ ubuntu rust build:
   script:
     - cargo build --release
     - ls target/release -la
-    - cp target/release/*.so .
-    - cp target/release/*.a .
+#    - cp target/release/*.so .
+#    - cp target/release/*.a .
 
   artifacts:
     name: $CI_PROJECT_TITLE-$CI_JOB_NAME-$CI_COMMIT_TIMESTAMP-$CI_COMMIT_REF_NAME-$CI_COMMIT_SHORT_SHA
