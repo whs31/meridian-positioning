@@ -1,5 +1,5 @@
 use std::fmt::{Display};
-use std::ops::{Add, Mul};
+use std::ops::{Add, Div, Mul, Sub};
 use float_cmp::approx_eq;
 use crate::positioning::constants as Constants;
 use crate::positioning::errors::PositioningError;
@@ -83,14 +83,32 @@ impl GeoCoordinate
     if !other.valid() { return Err(PositioningError::InvalidCoordinate(other.clone())) }
 
     let d_lon = (other.longitude - self.longitude).to_radians();
-    let lat1_rad = self.latitude.to_radians();
-    let lat2_rad = other.latitude.to_radians();
-    let y = d_lon.sin() * lat2_rad.cos();
-    let x = lat1_rad.cos() * lat2_rad.sin() - lat1_rad.sin() * lat2_rad.cos() * d_lon.cos();
-    let azimuth = y.atan2(x).to_degrees() + 360.0;
-    let w = azimuth.trunc() as f32;
-    let f = azimuth.fract() as f32;
-    Ok(((w + 360.0) as i32 % 360) as f32 + f)
+    let azimuth = d_lon
+      .sin()
+      .mul(other.latitude
+        .to_radians()
+        .cos()
+      ).atan2(self.latitude
+      .to_radians()
+      .cos()
+      .mul(other.latitude
+        .to_radians()
+        .sin()
+      ).sub(
+      self.latitude
+        .to_radians()
+        .sin()
+        .mul(other.latitude
+          .to_radians()
+          .cos()
+          .mul(d_lon
+            .cos()
+          )
+        )
+    )
+    ).to_degrees()
+      .add(360.0);
+    Ok(((azimuth.trunc() + 360.0) as i32 % 360) as f32 + azimuth.fract() as f32)
   }
 
   pub fn distance_to(&self, other: &GeoCoordinate) -> Result<f32, PositioningError>
@@ -98,21 +116,27 @@ impl GeoCoordinate
     if !self.valid() { return Err(PositioningError::InvalidCoordinate(self.clone())) }
     if !other.valid() { return Err(PositioningError::InvalidCoordinate(other.clone())) }
 
-    let d_lat = (other.latitude - self.latitude).to_radians();
-    let d_lon = (other.longitude - self.longitude).to_radians();
-    let haversine_d_lat = (d_lat / 2.0).sin().powi(2);
-    let haversine_d_lon = (d_lon / 2.0).sin().powi(2);
-    let y = self.latitude
-      .to_radians()
-      .cos()
-      .mul(other.latitude
+    let res = Constants::EARTH_MEAN_RADIUS
+      .mul(self.latitude
         .to_radians()
         .cos()
-      ).mul(haversine_d_lon)
-      .add(haversine_d_lat)
-      .sqrt()
-      .asin() as f32;
-    Ok(Constants::EARTH_MEAN_RADIUS * y * 2.0f32)
+        .mul(other.latitude
+          .to_radians()
+          .cos()
+        ).mul((other.longitude - self.longitude)
+        .to_radians()
+        .div(2.0)
+        .sin()
+        .powi(2)
+      ).add((other.latitude - self.latitude)
+        .to_radians()
+        .div(2.0)
+        .sin()
+        .powi(2)
+      ).sqrt()
+        .asin() as f32
+      ).mul(2.0f32);
+    Ok(res)
   }
 
   pub fn at_distance_and_azimuth(&self, distance: f32, azimuth: f32) -> Result<GeoCoordinate, PositioningError>
