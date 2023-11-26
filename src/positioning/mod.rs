@@ -1,5 +1,5 @@
 pub mod errors;
-mod constants;
+pub mod constants;
 mod utility;
 
 mod coordinate;
@@ -8,6 +8,8 @@ mod georectangle;
 mod geoshape;
 
 pub use utility::CardinalDirection;
+pub use utility::CoordinateField;
+pub use utility::CoordinateFieldType;
 pub use coordinate::GeoCoordinate;
 pub use coordinate::GeoCoordinateType;
 pub use path::GeoPath;
