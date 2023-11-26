@@ -132,7 +132,30 @@ impl GeoRectangle
 
   pub fn intersects(&self, other: &GeoRectangle) -> bool
   {
-    todo!("Implement GeoRectangle::intersects")
+    if self.tl.latitude < other.br.latitude || self.br.latitude > other.tl.latitude { return false }
+    if self.tl.latitude == 90.0 && self.tl.latitude == other.tl.latitude { return true }
+    if self.br.latitude == -90.0 && self.br.latitude == other.br.latitude { return true }
+    if self.tl.longitude < self.br.longitude
+    {
+      if other.tl.longitude < other.br.longitude {
+        if self.tl.longitude > other.br.longitude || self.br.longitude < other.tl.longitude {
+          return false
+        }
+      } else {
+        if self.tl.longitude > other.br.longitude && self.br.longitude < other.tl.longitude {
+          return false
+        }
+      }
+    }
+    else
+    {
+      if other.tl.longitude < other.br.longitude {
+        if other.tl.longitude > self.br.longitude && other.br.longitude < self.tl.longitude {
+          return false
+        }
+      } else { return true }
+    }
+    true
   }
 
   pub fn union(&self, other: &GeoRectangle) -> Self
@@ -162,37 +185,114 @@ impl GeoRectangle
 
   pub fn set_top_left(&mut self, coordinate: &GeoCoordinate) -> Result<(), PositioningError>
   {
-    todo!("Implement GeoRectangle::set_top_left")
+    if !coordinate.valid() { return Err(PositioningError::InvalidCoordinate(coordinate.clone())) }
+    self.tl = coordinate.clone();
+    Ok(())
   }
 
   pub fn set_top_right(&mut self, coordinate: &GeoCoordinate) -> Result<(), PositioningError>
   {
-    todo!("Implement GeoRectangle::set_top_right")
+    if !coordinate.valid() { return Err(PositioningError::InvalidCoordinate(coordinate.clone())) }
+    self.tl.latitude = coordinate.latitude;
+    self.br.longitude = coordinate.longitude;
+    Ok(())
   }
 
   pub fn set_bottom_left(&mut self, coordinate: &GeoCoordinate) -> Result<(), PositioningError>
   {
-    todo!("Implement GeoRectangle::set_bottom_left")
+    if !coordinate.valid() { return Err(PositioningError::InvalidCoordinate(coordinate.clone())) }
+    self.br.latitude = coordinate.latitude;
+    self.tl.longitude = coordinate.longitude;
+    Ok(())
   }
 
   pub fn set_bottom_right(&mut self, coordinate: &GeoCoordinate) -> Result<(), PositioningError>
   {
-    todo!("Implement GeoRectangle::set_bottom_right")
+    if !coordinate.valid() { return Err(PositioningError::InvalidCoordinate(coordinate.clone())) }
+    self.br = coordinate.clone();
+    Ok(())
   }
 
   pub fn set_width(&mut self, width_degrees: f64)
   {
-    todo!("Implement GeoRectangle::set_width")
+    if !self.valid() { return }
+    if width_degrees < 0.0 { return }
+    if width_degrees > 360.0 {
+      self.tl.longitude = -180.0;
+      self.br.longitude = 180.0;
+      return
+    }
+    self.tl = GeoCoordinate::new(
+      self.tl.latitude,
+      (self.center().longitude - width_degrees / 2.0).wrap(Longitude),
+      None
+    );
+    self.br = GeoCoordinate::new(
+      self.br.latitude,
+      (self.center().longitude + width_degrees / 2.0).wrap(Longitude),
+      None
+    );
   }
 
   pub fn set_height(&mut self, height_degrees: f64)
   {
-    todo!("Implement GeoRectangle::set_height")
+    if !self.valid() { return }
+    if height_degrees < 0.0 || height_degrees > 180.0 { return }
+
+    let mut tl_lat = self.center().latitude + height_degrees / 2.0;
+    let mut br_lat = self.center().latitude - height_degrees / 2.0;
+    if tl_lat > 90.0 {
+      br_lat = 2.0 * self.center().latitude - 90.0;
+      tl_lat = 90.0;
+    }
+    if tl_lat < -90.0 {
+      br_lat = -90.0;
+      tl_lat = -90.0;
+    }
+    if br_lat > 90.0 {
+      br_lat = 90.0;
+      tl_lat = 90.0;
+    }
+    if br_lat < -90.0 {
+      br_lat = -90.0;
+      tl_lat = 2.0 * self.center().latitude + 90.0;
+    }
+    self.tl = GeoCoordinate::new(tl_lat, self.tl.longitude, None);
+    self.br = GeoCoordinate::new(br_lat, self.br.longitude, None);
   }
 
   pub fn set_center(&mut self, center: &GeoCoordinate) -> Result<(), PositioningError>
   {
-    todo!("Implement GeoRectangle::set_center")
+    if !center.valid() { return Err(PositioningError::InvalidCoordinate(center.clone())) }
+    if !self.valid() { return Err(PositioningError::InvalidCoordinate(self.tl.clone())) }
+    let mut tl_lat = center.latitude + self.height() / 2.0;
+    let mut tl_lon = (center.longitude - self.width() / 2.0).wrap(Longitude);
+    let mut br_lat = center.latitude - self.height() / 2.0;
+    let mut br_lon = (center.longitude + self.width() / 2.0).wrap(Longitude);
+    if tl_lat > 90.0 {
+      br_lat = 2.0 * center.latitude - 90.0;
+      tl_lat = 90.0;
+    }
+    if tl_lat < -90.0 {
+      br_lat = -90.0;
+      tl_lat = -90.0;
+    }
+    if br_lat > 90.0 {
+      br_lat = 90.0;
+      tl_lat = 90.0;
+    }
+    if br_lat < -90.0 {
+      tl_lat = 2.0 * center.latitude + 90.0;
+      br_lat = -90.0;
+    }
+    if self.width() == 360.0 {
+      tl_lon = -180.0;
+      br_lon = 180.0;
+    }
+
+    self.tl = GeoCoordinate::new(tl_lat, tl_lon, None);
+    self.br = GeoCoordinate::new(br_lat, br_lon, None);
+    Ok(())
   }
 
   pub fn valid(&self) -> bool
