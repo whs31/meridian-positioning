@@ -1,1 +1,2 @@
-pub mod positioning;
+mod positioning;
+pub use positioning::*;
