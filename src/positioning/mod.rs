@@ -12,3 +12,4 @@ pub use coordinate::GeoCoordinate;
 pub use coordinate::GeoCoordinateType;
 pub use path::GeoPath;
 pub use path::GeoPathLengthType;
+pub use georectangle::GeoRectangle;
