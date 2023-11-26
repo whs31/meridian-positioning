@@ -1,4 +1,34 @@
 #[derive(Debug, PartialOrd, PartialEq)]
+pub enum CardinalDirection
+{
+  North,
+  NorthEast,
+  East,
+  SouthEast,
+  South,
+  SouthWest,
+  West,
+  NorthWest
+}
+
+impl CardinalDirection
+{
+  pub fn to_degrees(&self) -> f32
+  {
+    match self {
+      CardinalDirection::North => 0.0,
+      CardinalDirection::NorthEast => 45.0,
+      CardinalDirection::East => 90.0,
+      CardinalDirection::SouthEast => 135.0,
+      CardinalDirection::South => 180.0,
+      CardinalDirection::SouthWest => 225.0,
+      CardinalDirection::West => 270.0,
+      CardinalDirection::NorthWest => 315.0
+    }
+  }
+}
+
+#[derive(Debug, PartialOrd, PartialEq)]
 pub enum CoordinateFieldType
 {
   Latitude,

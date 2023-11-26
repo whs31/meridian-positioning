@@ -1,7 +1,8 @@
 use std::fmt::Display;
-use std::ops::Mul;
 use crate::positioning::errors::PositioningError;
-use crate::positioning::GeoCoordinate;
+use crate::positioning::{CardinalDirection, GeoCoordinate};
+use crate::positioning::utility::CoordinateField;
+use crate::positioning::utility::CoordinateFieldType::Longitude;
 
 #[derive(Debug, Clone)]
 pub struct GeoRectangle
@@ -41,9 +42,18 @@ impl GeoRectangle
     x
   }
 
-  pub fn from_center_meters(center: GeoCoordinate, width_meters: f64, height_meters: f64) -> Self
+  pub fn from_center_meters(center: GeoCoordinate, width_meters: f32, height_meters: f32)
+    -> Result<Self, PositioningError>
   {
-    todo!("Implement GeoRectangle::from_center_meters")
+    let rect = GeoRectangle::new(
+      center
+        .at_distance_and_azimuth(height_meters / 2.0, CardinalDirection::North.to_degrees())?
+        .at_distance_and_azimuth(width_meters / 2.0, CardinalDirection::West.to_degrees())?,
+      center
+        .at_distance_and_azimuth(height_meters / 2.0, CardinalDirection::South.to_degrees())?
+        .at_distance_and_azimuth(width_meters / 2.0, CardinalDirection::East.to_degrees())?
+    );
+    Ok(rect)
   }
 
   pub fn from_list(coordinates: &Vec<GeoCoordinate>) -> Self
@@ -52,44 +62,72 @@ impl GeoRectangle
     todo!("Implement GeoRectangle::from_list")
   }
 
+  pub fn bottom_right(&self) -> GeoCoordinate { self.br }
+  pub fn top_left(&self) -> GeoCoordinate { self.tl }
   pub fn bottom_left(&self) -> GeoCoordinate
   {
-    todo!("Implement GeoRectangle::bottom_left")
+    GeoCoordinate::new(self.br.latitude, self.tl.longitude, None)
   }
-
-  pub fn bottom_right(&self) -> GeoCoordinate
-  {
-    todo!("Implement GeoRectangle::bottom_right")
-  }
-
-  pub fn top_left(&self) -> GeoCoordinate
-  {
-    todo!("Implement GeoRectangle::top_left")
-  }
-
   pub fn top_right(&self) -> GeoCoordinate
   {
-    todo!("Implement GeoRectangle::top_right")
+    GeoCoordinate::new(self.tl.latitude, self.br.longitude, None)
   }
 
   pub fn center(&self) -> GeoCoordinate
   {
-    todo!("Implement GeoRectangle::center")
+    if !self.valid() { return GeoCoordinate::default() }
+    GeoCoordinate::new(
+      (self.tl.latitude + self.br.latitude) / 2.0,
+      if self.tl.longitude > self.br.longitude {
+        (self.br.longitude + self.tl.longitude) / 2.0 - 180.0
+      } else { (self.br.longitude + self.tl.longitude) / 2.0 }.wrap(Longitude),
+      None
+    )
   }
 
-  pub fn contains(&self, coordinate: &GeoCoordinate) -> bool
+  pub fn contains(&self, coordinate: &GeoCoordinate) -> Result<bool, PositioningError>
   {
-    todo!("Implement GeoRectangle::contains")
+    if !self.valid() { return Err(PositioningError::InvalidCoordinate(self.tl.clone())) }
+    if !coordinate.valid() { return Err(PositioningError::InvalidCoordinate(coordinate.clone())) }
+
+    if coordinate.latitude > self.tl.latitude || coordinate.latitude < self.br.latitude {
+      return Ok(false)
+    }
+    if coordinate.latitude == 90.0 && self.tl.latitude == 90.0 { return Ok(true) }
+    if coordinate.latitude == -90.0 && self.br.latitude == -90.0 { return Ok(true) }
+    if self.tl.longitude <= self.br.longitude {
+      if coordinate.longitude < self.tl.longitude || coordinate.longitude > self.br.longitude {
+        return Ok(false)
+      }
+    }
+    else {
+      if coordinate.longitude < self.tl.longitude && coordinate.longitude > self.br.longitude {
+        return Ok(false)
+      }
+    }
+    Ok(true)
+  }
+
+  pub fn contains_rect(&self, other: &GeoRectangle) -> Result<bool, PositioningError>
+  {
+    let ret = self.contains(&other.top_left())? && self.contains(&other.top_right())?
+      && self.contains(&other.bottom_left())? && self.contains(&other.bottom_right())?;
+    Ok(ret)
   }
 
   pub fn width(&self) -> f64
   {
-    todo!("Implement GeoRectangle::width")
+    if !self.valid() { return 0.0 }
+    let mut w = self.br.longitude - self.tl.longitude;
+    if w < 0.0 { w += 360.0 }
+    if w > 360.0 { w -= 360.0 }
+    w
   }
 
   pub fn height(&self) -> f64
   {
-    todo!("Implement GeoRectangle::height")
+    if !self.valid() { return 0.0 }
+    self.tl.latitude - self.br.latitude
   }
 
   pub fn intersects(&self, other: &GeoRectangle) -> bool
@@ -172,7 +210,7 @@ impl GeoRectangle
   {
     if !self.valid() { return Err(PositioningError::InvalidCoordinate(self.tl.clone())) }
     if !coord.valid() { return Err(PositioningError::InvalidCoordinate(coord.clone())) }
-    if self.contains(coord) { return Err(PositioningError::InvalidCoordinate(coord.clone())) }
+    if self.contains(coord)? { return Err(PositioningError::InvalidCoordinate(coord.clone())) }
 
     // TODO: rewrite in functional way (after tests ofc)
     let mut left = self.tl.longitude;

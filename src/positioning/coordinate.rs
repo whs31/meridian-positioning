@@ -7,7 +7,6 @@ use crate::positioning::utility::{CoordinateField};
 use crate::positioning::utility::CoordinateFieldType::{Latitude, Longitude};
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-
 pub enum GeoCoordinateType
 {
   InvalidCoordinate,
