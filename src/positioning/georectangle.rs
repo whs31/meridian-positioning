@@ -4,7 +4,7 @@ use crate::positioning::{CardinalDirection, GeoCoordinate};
 use crate::positioning::utility::CoordinateField;
 use crate::positioning::utility::CoordinateFieldType::Longitude;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct GeoRectangle
 {
   tl: GeoCoordinate,
@@ -385,6 +385,16 @@ mod tests {
     assert!(!rect.top_left().valid());
     assert!(!rect.bottom_right().valid());
   }
+  
+  #[test]
+  fn test_new() {
+    let rect = GeoRectangle::new(
+      GeoCoordinate::new(10.0, 0.0, None),
+      GeoCoordinate::new(0.0, 10.0, None)
+    );
+    assert_eq!(rect.top_left(), GeoCoordinate::new(10.0, 0.0, None));
+    assert_eq!(rect.bottom_right(), GeoCoordinate::new(0.0, 10.0, None));
+  }
 
   #[test]
   fn test_from_center_degrees() {
@@ -395,5 +405,52 @@ mod tests {
     );
     assert_eq!(rect.top_left(), GeoCoordinate::new(10.0, 0.0, None));
     assert_eq!(rect.bottom_right(), GeoCoordinate::new(0.0, 10.0, None));
+  }
+
+  // TODO: list ctor test
+
+  #[test]
+  fn test_assignment() {
+    let mut rect1 = GeoRectangle::new(
+      GeoCoordinate::new(10.0, 0.0, None),
+      GeoCoordinate::new(0.0, 10.0, None)
+    );
+    let mut rect2 = GeoRectangle::new(
+      GeoCoordinate::new(20.0, 0.0, None),
+      GeoCoordinate::new(0.0, 20.0, None)
+    );
+    assert_ne!(rect1, rect2);
+    rect2 = rect1.clone();
+    assert_eq!(rect2.top_left(), GeoCoordinate::new(10.0, 0.0, None));
+    assert_eq!(rect2.bottom_right(), GeoCoordinate::new(0.0, 10.0, None));
+    assert_eq!(rect1, rect2);
+  }
+
+  #[test]
+  fn test_corners() {
+    let mut rect = GeoRectangle::new(
+      GeoCoordinate::new(10.0, 0.0, None),
+      GeoCoordinate::new(0.0, 10.0, None)
+    );
+    rect.set_top_left(&GeoCoordinate::new(20.0, -10.0, None)).expect("Set top left failed");
+    assert_eq!(rect.top_left(), GeoCoordinate::new(20.0, -10.0, None));
+    assert_eq!(rect.top_right(), GeoCoordinate::new(20.0, 10.0, None));
+    assert_eq!(rect.bottom_left(), GeoCoordinate::new(0.0, -10.0, None));
+    assert_eq!(rect.bottom_right(), GeoCoordinate::new(0.0, 10.0, None));
+    rect.set_top_right(&GeoCoordinate::new(30.0, 20.0, None)).expect("Set top right failed");
+    assert_eq!(rect.top_left(), GeoCoordinate::new(30.0, -10.0, None));
+    assert_eq!(rect.top_right(), GeoCoordinate::new(30.0, 20.0, None));
+    assert_eq!(rect.bottom_left(), GeoCoordinate::new(0.0, -10.0, None));
+    assert_eq!(rect.bottom_right(), GeoCoordinate::new(0.0, 20.0, None));
+    rect.set_bottom_right(&GeoCoordinate::new(-10.0, 30.0, None)).expect("Set bottom right failed");
+    assert_eq!(rect.top_left(), GeoCoordinate::new(30.0, -10.0, None));
+    assert_eq!(rect.top_right(), GeoCoordinate::new(30.0, 30.0, None));
+    assert_eq!(rect.bottom_left(), GeoCoordinate::new(-10.0, -10.0, None));
+    assert_eq!(rect.bottom_right(), GeoCoordinate::new(-10.0, 30.0, None));
+    rect.set_bottom_left(&GeoCoordinate::new(-20.0, -20.0, None)).expect("Set bottom left failed");
+    assert_eq!(rect.top_left(), GeoCoordinate::new(30.0, -20.0, None));
+    assert_eq!(rect.top_right(), GeoCoordinate::new(30.0, 30.0, None));
+    assert_eq!(rect.bottom_left(), GeoCoordinate::new(-20.0, -20.0, None));
+    assert_eq!(rect.bottom_right(), GeoCoordinate::new(-20.0, 30.0, None));
   }
 }
