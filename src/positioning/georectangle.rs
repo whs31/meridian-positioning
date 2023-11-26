@@ -130,6 +130,24 @@ impl GeoRectangle
     self.tl.latitude - self.br.latitude
   }
 
+  pub fn width_meters(&self) -> Result<f32, PositioningError>
+  {
+    if !self.valid() { return Err(PositioningError::InvalidGeorectangle(self.clone())) }
+    let w = self
+      .top_left()
+      .distance_to(&self.top_right())?;
+    Ok(w)
+  }
+
+  pub fn height_meters(&self) -> Result<f32, PositioningError>
+  {
+    if !self.valid() { return Err(PositioningError::InvalidGeorectangle(self.clone())) }
+    let h = self
+      .top_left()
+      .distance_to(&self.bottom_left())?;
+    Ok(h)
+  }
+
   pub fn intersects(&self, other: &GeoRectangle) -> bool
   {
     if self.tl.latitude < other.br.latitude || self.br.latitude > other.tl.latitude { return false }
@@ -264,7 +282,7 @@ impl GeoRectangle
   pub fn set_center(&mut self, center: &GeoCoordinate) -> Result<(), PositioningError>
   {
     if !center.valid() { return Err(PositioningError::InvalidCoordinate(center.clone())) }
-    if !self.valid() { return Err(PositioningError::InvalidCoordinate(self.tl.clone())) }
+    if !self.valid() { return Err(PositioningError::InvalidGeorectangle(self.clone())) }
     let mut tl_lat = center.latitude + self.height() / 2.0;
     let mut tl_lon = (center.longitude - self.width() / 2.0).wrap(Longitude);
     let mut br_lat = center.latitude - self.height() / 2.0;
@@ -308,7 +326,7 @@ impl GeoRectangle
 
   fn extend_shape(&mut self, coord: &GeoCoordinate) -> Result<(), PositioningError>
   {
-    if !self.valid() { return Err(PositioningError::InvalidCoordinate(self.tl.clone())) }
+    if !self.valid() { return Err(PositioningError::InvalidGeorectangle(self.clone())) }
     if !coord.valid() { return Err(PositioningError::InvalidCoordinate(coord.clone())) }
     if self.contains(coord)? { return Err(PositioningError::InvalidCoordinate(coord.clone())) }
 
