@@ -43,7 +43,7 @@ impl GeoRectangle
   }
 
   pub fn from_center_meters(center: GeoCoordinate, width_meters: f32, height_meters: f32)
-    -> Result<Self, PositioningError>
+                            -> Result<Self, PositioningError>
   {
     let rect = GeoRectangle::new(
       center
@@ -240,14 +240,15 @@ impl GeoRectangle
       self.br.longitude = 180.0;
       return
     }
+    let c = self.center();
     self.tl = GeoCoordinate::new(
       self.tl.latitude,
-      (self.center().longitude - width_degrees / 2.0).wrap(Longitude),
+      (c.longitude - width_degrees / 2.0).wrap(Longitude),
       None
     );
     self.br = GeoCoordinate::new(
       self.br.latitude,
-      (self.center().longitude + width_degrees / 2.0).wrap(Longitude),
+      (c.longitude + width_degrees / 2.0).wrap(Longitude),
       None
     );
   }
@@ -257,10 +258,11 @@ impl GeoRectangle
     if !self.valid() { return }
     if height_degrees < 0.0 || height_degrees > 180.0 { return }
 
-    let mut tl_lat = self.center().latitude + height_degrees / 2.0;
-    let mut br_lat = self.center().latitude - height_degrees / 2.0;
+    let c = self.center();
+    let mut tl_lat = c.latitude + height_degrees / 2.0;
+    let mut br_lat = c.latitude - height_degrees / 2.0;
     if tl_lat > 90.0 {
-      br_lat = 2.0 * self.center().latitude - 90.0;
+      br_lat = 2.0 * c.latitude - 90.0;
       tl_lat = 90.0;
     }
     if tl_lat < -90.0 {
@@ -273,7 +275,7 @@ impl GeoRectangle
     }
     if br_lat < -90.0 {
       br_lat = -90.0;
-      tl_lat = 2.0 * self.center().latitude + 90.0;
+      tl_lat = 2.0 * c.latitude + 90.0;
     }
     self.tl = GeoCoordinate::new(tl_lat, self.tl.longitude, None);
     self.br = GeoCoordinate::new(br_lat, self.br.longitude, None);
@@ -371,3 +373,27 @@ impl GeoRectangle
   }
 }
 
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_default() {
+    let rect = GeoRectangle::default();
+    assert!(rect.empty());
+    assert!(!rect.valid());
+    assert!(!rect.top_left().valid());
+    assert!(!rect.bottom_right().valid());
+  }
+
+  #[test]
+  fn test_from_center_degrees() {
+    let rect = GeoRectangle::from_center_degrees(
+      GeoCoordinate::new(5.0, 5.0, None),
+      10.0,
+      10.0
+    );
+    assert_eq!(rect.top_left(), GeoCoordinate::new(10.0, 0.0, None));
+    assert_eq!(rect.bottom_right(), GeoCoordinate::new(0.0, 10.0, None));
+  }
+}
